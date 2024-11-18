@@ -1,5 +1,4 @@
 from PySide6.QtWidgets import (
-    QApplication,
     QMainWindow,
     QPushButton,
     QVBoxLayout,
@@ -7,26 +6,19 @@ from PySide6.QtWidgets import (
     QWidget,
     QSlider,
     QLabel,
+    QLineEdit,
 )
 from PySide6.QtCore import Qt, QTimer
-import sys
+from PySide6.QtGui import QIntValidator, QDoubleValidator
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib
-import pathlib
 import importlib
 
 import matplotlib.pyplot
 
 matplotlib.use("QtAgg")
-
-# Makes the graphs dark mode
-matplotlib.pyplot.style.use("dark_background")
-
-
-def get_simulation_files():
-    files = pathlib.Path("simulations").rglob("*.py")
-
-    return [file for file in files]
+matplotlib.pyplot.style.use("dark_background")  # Dark theme
+# BUG: Still dark if user theme is light
 
 
 class SimulationButton(QPushButton):
@@ -36,6 +28,8 @@ class SimulationButton(QPushButton):
 
         super().__init__(self.simulation.name)
         self.clicked.connect(self.click)
+
+        self.setStyleSheet("padding: 10px;")
 
         self.action = action
         self.update_simulation = update_simulation
@@ -75,7 +69,7 @@ class SimulationButton(QPushButton):
         labels = {}
 
         for field, data in self.simulation.get_fields().items():
-            input_layout = QHBoxLayout()
+            input_layout = QVBoxLayout()
 
             if data["type"] == "slider":
                 fields[field] = QSlider(orientation=Qt.Horizontal)
@@ -100,7 +94,57 @@ class SimulationButton(QPushButton):
                 input_layout.addWidget(labels[field])
                 input_layout.addWidget(fields[field])
 
-                layouts.append(input_layout)
+            elif data["type"] == "integer":
+                only_int = QIntValidator()
+
+                if "min" in data:
+                    only_int.setBottom(data["min"])
+                if "max" in data:
+                    only_int.setTop(data["max"])
+
+                fields[field] = QLineEdit()
+                fields[field].setValidator(only_int)
+                fields[field].setText(str(data["value"]))
+
+                labels[field] = QLabel(f"{data["label"]}:")
+
+                def connect(field):
+                    def inner():
+                        if fields[field].text() != "" and int(fields[field].text()) >= data["min"]:
+                            self.update_simulation({field: int(fields[field].text())})
+
+                    fields[field].textChanged.connect(inner)
+
+                connect(field)
+                input_layout.addWidget(labels[field])
+                input_layout.addWidget(fields[field])
+
+            elif data["type"] == "float":
+                only_float = QDoubleValidator()
+
+                if "min" in data:
+                    only_float.setBottom(data["min"])
+                if "max" in data:
+                    only_float.setTop(data["max"])
+
+                fields[field] = QLineEdit()
+                fields[field].setValidator(only_float)
+                fields[field].setText(str(data["value"]))
+
+                labels[field] = QLabel(f"{data["label"]}:")
+
+                def connect(field):
+                    def inner():
+                        if fields[field].text() not in ["", "."] and float(fields[field].text()) >= data["min"]:
+                            self.update_simulation({field: float(fields[field].text())})
+
+                    fields[field].textChanged.connect(inner)
+
+                connect(field)
+                input_layout.addWidget(labels[field])
+                input_layout.addWidget(fields[field])
+
+            layouts.append(input_layout)
 
         return layouts
 
@@ -120,53 +164,78 @@ class SimulationButton(QPushButton):
             )
 
 
+class Heading(QLabel):
+    def __init__(self, text):
+        super().__init__(text)
+        self.setStyleSheet(
+            "font-size: 20px; font-weight: bold; margin-top: 10px; margin-bottom: 10px; margin-left: -5px;"
+        )
+
+
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, simulations: list):
         super().__init__()
         self.setWindowTitle("Physical Mechanics Simulations")
         self.setMinimumSize(800, 600)
+        self.showMaximized()
 
+        # Layouts
         main_layout = QHBoxLayout()
-        simulation_layout = QVBoxLayout()
-        experiment_list = QVBoxLayout()
-        settings_list = QHBoxLayout()
 
-        self.variable_list = QVBoxLayout()
-        self.reading_widget = QWidget()
-        self.reading_widget.setLayout(self.variable_list)
-        self.reading_widget.setFixedWidth(200)
+        buttons_widget = QWidget()
+        buttons_list = QVBoxLayout()
+        buttons_list.addWidget(Heading("Simulations"))
+        buttons_widget.setLayout(buttons_list)
+        buttons_widget.setMaximumWidth(300)
+
+        self.settings_list = QVBoxLayout()
+        self.readings_list = QVBoxLayout()
+
+        # Sidebar
+        sidebar = QVBoxLayout()
+        sidebar_widget = QWidget()
+
+        sidebar.addWidget(Heading("Settings"))
+        sidebar.addLayout(self.settings_list)
+        sidebar.addLayout(self.readings_list)
+        sidebar_widget.setLayout(sidebar)
+        sidebar_widget.setMaximumWidth(300)
 
         self.graph_layout = QVBoxLayout()
         self.buttons = []
         self.graph_index = 0
 
-        simulation_layout.addLayout(self.graph_layout)
-        simulation_layout.addLayout(settings_list)
+        main_layout.addWidget(buttons_widget)
+        main_layout.addLayout(self.graph_layout)
+        main_layout.addWidget(sidebar_widget)
 
-        main_layout.addLayout(experiment_list)
-        main_layout.addLayout(simulation_layout)
-        main_layout.addWidget(self.reading_widget)
+        # Add simulation buttons
 
-        for index, file in enumerate(get_simulation_files()):
+        for index, file in enumerate(simulations):
             button = SimulationButton(file.stem, self.change_figure, self.update_simulation)
             self.buttons.append(button)
 
-            experiment_list.addWidget(button)
+            buttons_list.addWidget(button)
 
             if index == 0:
                 self.graph_layout.addWidget(button.canvas)
                 self.graph_index = index
-                for field in button.edit_fields():
-                    settings_list.addLayout(field)
 
-                self.variable_list.addWidget(QLabel("Readings:"))
-                self.variable_list.addLayout(button.readings())
-                self.variable_list.addStretch()
+                for field in button.edit_fields():
+                    self.settings_list.addLayout(field)
+
+                self.readings_list.addWidget(Heading("Readings"))
+                self.readings_list.addLayout(button.readings())
+                self.readings_list.addStretch()
                 self.variable_timer = QTimer()
                 self.variable_timer.timeout.connect(self.update_readings)
                 self.variable_timer.start(10)
 
             button.set_position(index)
+
+        buttons_list.addStretch()
+
+        # Set up the main widget
 
         widget = QWidget()
         widget.setLayout(main_layout)
@@ -187,12 +256,3 @@ class MainWindow(QMainWindow):
 
     def update_readings(self):
         self.buttons[self.graph_index].update_readings()
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-
-    window = MainWindow()
-    window.show()
-
-    app.exec()

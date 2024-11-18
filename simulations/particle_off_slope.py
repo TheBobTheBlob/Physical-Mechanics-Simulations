@@ -3,11 +3,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
+from .simulation import BaseSimulation
 
 
-class Simulation:
+class Simulation(BaseSimulation):
     def __init__(self):
-        self.name = "Launching a Particle Off of a Slope"
+        super().__init__("Launching an Object Off of a Slope")
 
         self.G_EARTH = 9.807  # acceleration due to gravity on Earth in m/s^2
 
@@ -95,6 +96,10 @@ class Simulation:
             self.SLOPE_ANGLE = int(variables["slope_angle"])
         if "launch_angle" in variables:
             self.LAUNCH_ANGLE = int(variables["launch_angle"])
+        if "speed" in variables:
+            self.LAUNCH_SPEED = float(variables["speed"])
+        if "gravity" in variables:
+            self.G_EARTH = float(variables["gravity"])
 
         return True
 
@@ -108,16 +113,23 @@ class Simulation:
                 "value": self.LAUNCH_ANGLE,
                 "label": "Launch Angle",
             },
+            "speed": {"type": "float", "value": self.LAUNCH_SPEED, "label": "Launch Speed", "min": 1},
+            "gravity": {"type": "float", "value": self.G_EARTH, "label": "Acceleration due to Gravity", "min": 1},
         }
 
         return fields
 
     def get_readings(self) -> dict:
+        try:
+            state = self.state[self.offset]
+        except IndexError:
+            state = self.state[-1]
+
         readings = {
-            "x": {"label": "X Position", "value": round(self.state[self.offset, 0], 5)},
-            "y": {"label": "Y Position", "value": round(self.state[self.offset, 1], 5)},
-            "vx": {"label": "X Velocity", "value": round(self.state[self.offset, 2], 5)},
-            "vy": {"label": "Y Velocity", "value": round(self.state[self.offset, 3], 5)},
+            "x": {"label": "X Position", "value": round(state[0], 5)},
+            "y": {"label": "Y Position", "value": round(state[1], 5)},
+            "vx": {"label": "X Velocity", "value": round(state[2], 5)},
+            "vy": {"label": "Y Velocity", "value": round(state[3], 5)},
         }
 
         return readings

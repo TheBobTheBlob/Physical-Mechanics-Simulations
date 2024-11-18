@@ -20,9 +20,10 @@ class Simulation:
         self.state = np.zeros((1, 4))  # x, y, vx, vy
         self.mass = np.array([self.PARTICLE_MASS])  # mass of each particle. unit: kg
 
-        # self.state[0] = self.initial_conditions()
         self.SIMULATION_LENGTH = 10000  # number of steps to simulate
         self.SIMULATIONS_PER_SECOND = 25
+
+        self.offset = 0
 
     def initial_conditions(self):
         # x, y, vx, vy
@@ -50,6 +51,7 @@ class Simulation:
             if state[1] < -np.tan(np.deg2rad(self.SLOPE_ANGLE)) * state[0]:
                 break
             simulation.append(np.copy(state))
+            self.state = np.vstack([self.state, state])
 
         return np.array(simulation)
 
@@ -63,8 +65,8 @@ class Simulation:
 
         fig = plt.figure()
         scatter = plt.scatter(
-            self.state[:, 0],
-            self.state[:, 1],
+            self.state[0, 0],
+            self.state[0, 1],
         )
 
         line_x = np.linspace(simulation[-1, 0] * -0.1, simulation[-1, 0] * 1.1, 100)
@@ -74,6 +76,7 @@ class Simulation:
         plt.plot(simulation[:, 0], simulation[:, 1], visible=False)
 
         def animate_func(i):
+            self.offset = i
             data = simulation[:, [0, 1]]
             scatter.set_offsets(data[i])
             return scatter
@@ -86,8 +89,35 @@ class Simulation:
 
         return fig, anim
 
-    def update_variables(self, variables):
+    def update_variables(self, variables) -> bool:
+        self.state = np.zeros((1, 4))
         if "slope_angle" in variables:
-            self.SLOPE_ANGLE = variables["slope_angle"]
+            self.SLOPE_ANGLE = int(variables["slope_angle"])
         if "launch_angle" in variables:
-            self.LAUNCH_ANGLE = variables["launch_angle"]
+            self.LAUNCH_ANGLE = int(variables["launch_angle"])
+
+        return True
+
+    def get_fields(self) -> dict:
+        fields = {
+            "slope_angle": {"type": "slider", "min": 0, "max": 89, "value": self.SLOPE_ANGLE, "label": "Slope Angle"},
+            "launch_angle": {
+                "type": "slider",
+                "min": 0,
+                "max": 89,
+                "value": self.LAUNCH_ANGLE,
+                "label": "Launch Angle",
+            },
+        }
+
+        return fields
+
+    def get_readings(self) -> dict:
+        readings = {
+            "x": {"label": "X Position", "value": round(self.state[self.offset, 0], 5)},
+            "y": {"label": "Y Position", "value": round(self.state[self.offset, 1], 5)},
+            "vx": {"label": "X Velocity", "value": round(self.state[self.offset, 2], 5)},
+            "vy": {"label": "Y Velocity", "value": round(self.state[self.offset, 3], 5)},
+        }
+
+        return readings

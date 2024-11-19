@@ -51,11 +51,11 @@ class SimulationButton(QPushButton):
 
     def refresh_canvas(self, run=True) -> None:
         if run:
+            plt.close("all")
             self.figure, self.anim = self.simulation.get_figure()
             self.canvas = FigureCanvas(self.figure)
 
     def click(self) -> None:
-        plt.close("all")
         self.refresh_canvas()
         self.action(self.position)
 

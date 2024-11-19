@@ -14,15 +14,15 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib
 import importlib
 
-import matplotlib.pyplot
+import matplotlib.pyplot as plt
 
 matplotlib.use("QtAgg")
-matplotlib.pyplot.style.use("dark_background")  # Dark theme
+plt.style.use("dark_background")  # Dark theme
 # BUG: Still dark if user theme is light
 
 
 class SimulationButton(QPushButton):
-    def __init__(self, text, action, update_simulation):
+    def __init__(self, text, action, update_simulation, first=False):
         module = importlib.import_module(f"simulations.{text}")
         self.simulation = module.Simulation()
 
@@ -39,19 +39,27 @@ class SimulationButton(QPushButton):
         self.position = None
         self.canvas = None
 
-        self.readings_layout = QVBoxLayout()
+        self.fields_widget = None
+        self.fields_layout = None
 
-        self.refresh_canvas()
+        self.readings_widget = None
+        self.readings_layout = None
 
-    def refresh_canvas(self):
-        self.figure, self.anim = self.simulation.get_figure()
-        self.canvas = FigureCanvas(self.figure)
+        self.refresh_canvas(run=first)
+        self.edit_fields()
+        self.readings()
 
-    def click(self):
+    def refresh_canvas(self, run=True) -> None:
+        if run:
+            self.figure, self.anim = self.simulation.get_figure()
+            self.canvas = FigureCanvas(self.figure)
+
+    def click(self) -> None:
+        plt.close("all")
         self.refresh_canvas()
         self.action(self.position)
 
-    def set_position(self, position):
+    def set_position(self, position) -> None:
         self.position = position
 
     def update_variables(self, variables) -> bool:
@@ -63,10 +71,13 @@ class SimulationButton(QPushButton):
         else:
             return False
 
-    def edit_fields(self):
-        layouts = []
+    def edit_fields(self) -> None:
         fields = {}
         labels = {}
+
+        self.fields_widget = QWidget()
+        self.fields_layout = QVBoxLayout()
+        self.fields_layout.setContentsMargins(0, 0, 0, 0)
 
         for field, data in self.simulation.get_fields().items():
             input_layout = QVBoxLayout()
@@ -144,24 +155,22 @@ class SimulationButton(QPushButton):
                 input_layout.addWidget(labels[field])
                 input_layout.addWidget(fields[field])
 
-            layouts.append(input_layout)
+            self.fields_layout.addLayout(input_layout)
 
-        return layouts
+        self.fields_widget.setLayout(self.fields_layout)
 
-    def readings(self):
-        if self.readings_layout.count() != 0:
-            return self.readings_layout
+    def readings(self) -> None:
+        self.readings_widget = QWidget()
+        self.readings_layout = QVBoxLayout()
+        self.readings_layout.setContentsMargins(0, 0, 0, 0)
+        self.readings_widget.setLayout(self.readings_layout)
 
         for value in self.simulation.get_readings().values():
             self.readings_layout.addWidget(QLabel(f"{value["label"]}: {value["value"]}"))
 
-        return self.readings_layout
-
-    def update_readings(self):
-        for i in range(self.readings_layout.count()):
-            self.readings_layout.itemAt(i).widget().setText(
-                f"{list(self.simulation.get_readings().values())[i]["label"]}: {list(self.simulation.get_readings().values())[i]["value"]}"
-            )
+    def update_readings(self) -> None:
+        for index, value in enumerate(self.simulation.get_readings().values()):
+            self.readings_layout.itemAt(index).widget().setText(f"{value["label"]}: {value["value"]}")
 
 
 class Heading(QLabel):
@@ -192,27 +201,35 @@ class MainWindow(QMainWindow):
         self.readings_list = QVBoxLayout()
 
         # Sidebar
-        sidebar = QVBoxLayout()
-        sidebar_widget = QWidget()
+        self.sidebar = QVBoxLayout()
+        self.sidebar_widget = QWidget()
 
-        sidebar.addWidget(Heading("Settings"))
-        sidebar.addLayout(self.settings_list)
-        sidebar.addLayout(self.readings_list)
-        sidebar_widget.setLayout(sidebar)
-        sidebar_widget.setMaximumWidth(300)
+        self.sidebar.addWidget(Heading("Settings"))
+        self.sidebar.addLayout(self.settings_list)
+        self.sidebar.addLayout(self.readings_list)
+        self.sidebar_widget.setLayout(self.sidebar)
+        self.sidebar_widget.setMaximumWidth(300)
 
         self.graph_layout = QVBoxLayout()
         self.buttons = []
         self.graph_index = 0
 
+        # Main layout
+
         main_layout.addWidget(buttons_widget)
         main_layout.addLayout(self.graph_layout)
-        main_layout.addWidget(sidebar_widget)
+        main_layout.addWidget(self.sidebar_widget)
 
         # Add simulation buttons
 
+        self.readings_list.addWidget(Heading("Readings"))
+
+        self.readings_timer = QTimer()
+        self.readings_timer.timeout.connect(self.update_readings)
+        self.readings_timer.start(10)
+
         for index, file in enumerate(simulations):
-            button = SimulationButton(file.stem, self.change_figure, self.update_simulation)
+            button = SimulationButton(file.stem, self.change_figure, self.update_simulation, first=index == 0)
             self.buttons.append(button)
 
             buttons_list.addWidget(button)
@@ -221,15 +238,11 @@ class MainWindow(QMainWindow):
                 self.graph_layout.addWidget(button.canvas)
                 self.graph_index = index
 
-                for field in button.edit_fields():
-                    self.settings_list.addLayout(field)
-
-                self.readings_list.addWidget(Heading("Readings"))
-                self.readings_list.addLayout(button.readings())
+                self.settings_list.addWidget(button.fields_widget)
+                self.readings_list.addWidget(button.readings_widget)
                 self.readings_list.addStretch()
-                self.variable_timer = QTimer()
-                self.variable_timer.timeout.connect(self.update_readings)
-                self.variable_timer.start(10)
+
+                button.setEnabled(False)
 
             button.set_position(index)
 
@@ -243,15 +256,28 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(widget)
 
     def change_figure(self, position):
+        self.buttons[self.graph_index].setEnabled(True)
         self.graph_layout.removeWidget(self.buttons[self.graph_index].canvas)
+
+        self.settings_list.removeWidget(self.buttons[self.graph_index].fields_widget)
+        self.buttons[self.graph_index].fields_widget.setParent(None)
+
+        self.readings_list.removeWidget(self.buttons[self.graph_index].readings_widget)
+        self.buttons[self.graph_index].readings_widget.setParent(None)
+
         self.graph_index = position
+
         self.graph_layout.addWidget(self.buttons[self.graph_index].canvas)
+        self.settings_list.addWidget(self.buttons[self.graph_index].fields_widget)
+        self.buttons[self.graph_index].setEnabled(False)
+
+        self.readings_list.insertWidget(1, self.buttons[self.graph_index].readings_widget)
 
     def update_simulation(self, variables):
         success = self.buttons[self.graph_index].update_variables(variables)
 
         if success:
-            self.graph_layout.itemAt(self.graph_layout.count() - 1).widget().deleteLater()
+            self.graph_layout.removeItem(self.graph_layout.itemAt(self.graph_layout.count() - 1))
             self.graph_layout.addWidget(self.buttons[self.graph_index].canvas)
 
     def update_readings(self):

@@ -3,7 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
-from .simulation import BaseSimulation
+from .simulation import BaseSimulation  # type: ignore
 
 
 class Simulation(BaseSimulation):
@@ -57,7 +57,6 @@ class Simulation(BaseSimulation):
         return np.array(simulation)
 
     def get_figure(self):
-        plt.close("all")
         simulation = self.simulate(
             self.initial_conditions(),
             self.SIMULATION_LENGTH,

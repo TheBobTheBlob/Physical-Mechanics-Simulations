@@ -20,6 +20,8 @@ matplotlib.use("QtAgg")
 plt.style.use("dark_background")  # Dark theme
 # BUG: Still dark if user theme is light
 
+LINK = "https://github.com/TheBobTheBlob/Physical-Mechanics-Simulations"
+
 
 class SimulationButton(QPushButton):
     def __init__(self, text, action, update_simulation, first=False):
@@ -248,8 +250,12 @@ class MainWindow(QMainWindow):
 
         buttons_list.addStretch()
 
-        # Set up the main widget
+        # Add link to GitHub
+        link = QLabel(f'<a href="{LINK}">Created by Punit Turlapati</a>')
+        link.setOpenExternalLinks(True)
+        buttons_list.addWidget(link)
 
+        # Set up the main widget
         widget = QWidget()
         widget.setLayout(main_layout)
 

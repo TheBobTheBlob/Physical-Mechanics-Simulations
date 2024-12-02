@@ -12,23 +12,16 @@ class Simulation(BaseSimulation):
 
         self.G_EARTH = 9.807  # acceleration due to gravity on Earth in m/s^2
 
-        self.PARTICLE_MASS = 1  # mass of each particle in kg
+        self.PARTICLE_MASS = 1  # mass of the particle in kg
         self.SLOPE_ANGLE = 30  # angle of the slope in degrees
-
         self.LAUNCH_ANGLE = 45  # angle of the launch in degrees
         self.LAUNCH_SPEED = 10  # speed of the launch in m/s
 
         self.state = np.zeros((1, 4))  # x, y, vx, vy
         self.mass = np.array([self.PARTICLE_MASS])  # mass of each particle. unit: kg
 
-        self.SIMULATION_LENGTH = 10000  # number of steps to simulate
-        self.SIMULATIONS_PER_SECOND = 25
-
-        self.offset = 0
-
     def initial_conditions(self):
-        # x, y, vx, vy
-        state = np.zeros(4)
+        state = np.zeros(4)  # x, y, vx, vy
 
         state[0] = 0  # x position of the particle
         state[1] = 0  # y position of the particle
@@ -39,29 +32,28 @@ class Simulation(BaseSimulation):
 
         return state
 
-    def simulate(self, initial_state, steps, sims_per_sec):
+    def simulate(self, initial_state):
         state = np.copy(initial_state)
         simulation = [np.copy(state)]
 
-        for i in range(steps * sims_per_sec):
-            state[0] += state[2] / sims_per_sec
-            state[1] += state[3] / sims_per_sec
+        for i in range(self.SIM_LENGTH * self.SIMS_PER_SECOND):
+            state[0] += state[2] / self.SIMS_PER_SECOND
+            state[1] += state[3] / self.SIMS_PER_SECOND
             state[2] = state[2]
-            state[3] = initial_state[2] - (0.5 * self.G_EARTH * (i / sims_per_sec) ** 2)
+            state[3] = initial_state[2] - (0.5 * self.G_EARTH * (i / self.SIMS_PER_SECOND) ** 2)
 
             if state[1] < -np.tan(np.deg2rad(self.SLOPE_ANGLE)) * state[0]:
                 break
+            if i > self.MAX_SIMS:
+                break
+
             simulation.append(np.copy(state))
             self.state = np.vstack([self.state, state])
 
         return np.array(simulation)
 
     def get_figure(self):
-        simulation = self.simulate(
-            self.initial_conditions(),
-            self.SIMULATION_LENGTH,
-            self.SIMULATIONS_PER_SECOND,
-        )
+        simulation = self.simulate(self.initial_conditions())
 
         fig = plt.figure()
         scatter = plt.scatter(
@@ -82,7 +74,7 @@ class Simulation(BaseSimulation):
             return scatter
 
         anim = animation.FuncAnimation(
-            fig, animate_func, frames=range(len(simulation)), interval=(1000 / self.SIMULATIONS_PER_SECOND)
+            fig, animate_func, frames=range(len(simulation)), interval=(1000 / self.SIMS_PER_SECOND)
         )
 
         plt.axis("scaled")
@@ -99,6 +91,8 @@ class Simulation(BaseSimulation):
             self.LAUNCH_SPEED = float(variables["speed"])
         if "gravity" in variables:
             self.G_EARTH = float(variables["gravity"])
+        if "mass" in variables:
+            self.PARTICLE_MASS = float(variables["mass"])
 
         return True
 
@@ -114,6 +108,7 @@ class Simulation(BaseSimulation):
             },
             "speed": {"type": "float", "value": self.LAUNCH_SPEED, "label": "Launch Speed", "min": 1},
             "gravity": {"type": "float", "value": self.G_EARTH, "label": "Acceleration due to Gravity", "min": 1},
+            "mass": {"type": "float", "value": self.PARTICLE_MASS, "label": "Particle Mass", "min": 1},
         }
 
         return fields
@@ -125,10 +120,10 @@ class Simulation(BaseSimulation):
             state = self.state[-1]
 
         readings = {
-            "x": {"label": "X Position", "value": round(state[0], 5)},
-            "y": {"label": "Y Position", "value": round(state[1], 5)},
-            "vx": {"label": "X Velocity", "value": round(state[2], 5)},
-            "vy": {"label": "Y Velocity", "value": round(state[3], 5)},
+            "x": {"label": "X Position", "value": round(state[0], self.ROUND)},
+            "y": {"label": "Y Position", "value": round(state[1], self.ROUND)},
+            "vx": {"label": "X Velocity", "value": round(state[2], self.ROUND)},
+            "vy": {"label": "Y Velocity", "value": round(state[3], self.ROUND)},
         }
 
         return readings

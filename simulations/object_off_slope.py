@@ -10,8 +10,6 @@ class Simulation(BaseSimulation):
     def __init__(self):
         super().__init__("Launching an Object Off of a Slope", 4)
 
-        self.G_EARTH = 9.807  # acceleration due to gravity on Earth in m/s^2
-
         self.PARTICLE_MASS = 10  # mass of the particle in kg
         self.SLOPE_ANGLE = 30  # angle of the slope in degrees
         self.LAUNCH_ANGLE = 45  # angle of the launch in degrees
@@ -72,10 +70,7 @@ class Simulation(BaseSimulation):
         simulation = self.simulate(self.initial_conditions())
 
         fig = plt.figure()
-        scatter = plt.scatter(
-            self.state[0, 0],
-            self.state[0, 1],
-        )
+        scatter = plt.scatter(self.state[0, 0], self.state[0, 1], s=100)
 
         # Plots the slope
         line_x = np.linspace(simulation[-1, 0] * -0.1, simulation[-1, 0] * 1.1, 100)

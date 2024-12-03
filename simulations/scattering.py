@@ -59,10 +59,13 @@ class Simulation(BaseSimulation):
                 < self.MOVING_PARTICLE_RADIUS + self.STATIC_PARTICLE_RADIUS
             ):
                 theta = np.arctan2(self.IMPACT_PARAMETER, self.MOVING_PARTICLE_RADIUS + self.STATIC_PARTICLE_RADIUS)
-                state[2] = self.LAUNCH_SPEED * np.cos(theta)
+                if theta < np.pi / 4:
+                    state[2] = -self.LAUNCH_SPEED * np.cos(theta)
+                else:
+                    state[2] = self.LAUNCH_SPEED * np.cos(theta)
                 state[3] = self.LAUNCH_SPEED * np.sin(theta)
 
-                state[6] = (self.MOVING_PARTICLE_MASS / self.STATIC_PARTICLE_MASS) * state[2]
+                state[6] = (self.MOVING_PARTICLE_MASS / self.STATIC_PARTICLE_MASS) * abs(state[2])
                 state[7] = -(self.MOVING_PARTICLE_MASS / self.STATIC_PARTICLE_MASS) * state[3]
 
             if (

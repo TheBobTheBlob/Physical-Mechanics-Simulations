@@ -124,7 +124,10 @@ class SimulationButton(QPushButton):
 
                 def connect(field):
                     def inner():
-                        if fields[field].text() != "" and int(fields[field].text()) >= data["min"]:
+                        if (
+                            fields[field].text() != ""
+                            and int(fields[field].text()) >= self.simulation.get_fields()[field]["min"]
+                        ):
                             self.update_simulation({field: int(fields[field].text())})
 
                     fields[field].textChanged.connect(inner)
@@ -149,7 +152,10 @@ class SimulationButton(QPushButton):
 
                 def connect(field):
                     def inner():
-                        if fields[field].text() not in ["", "."] and float(fields[field].text()) >= data["min"]:
+                        if (
+                            fields[field].text() not in ["", "."]
+                            and float(fields[field].text()) >= self.simulation.get_fields()[field]["min"]
+                        ):
                             self.update_simulation({field: float(fields[field].text())})
 
                     fields[field].textChanged.connect(inner)

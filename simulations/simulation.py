@@ -7,6 +7,8 @@ class BaseSimulation(ABC):
         self.offset = 0
         self.state_length = state_length
 
+        self.G_EARTH = 9.807  # acceleration due to gravity on Earth in m/s^2
+
         self.SIM_LENGTH = 10000  # number of steps to simulate
         self.SIMS_PER_SECOND = 25
 

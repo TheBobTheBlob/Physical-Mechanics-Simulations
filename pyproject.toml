@@ -9,10 +9,9 @@ readme = "README.md"
 license = { file = "LICENCE" }
 
 requires-python = ">=3.8"
-
 dependencies = ["numpy", "scipy", "matplotlib", "PySide6"]
 
 [project.urls]
-"Homepage" = "https://github.com/pypa/sampleproject"
-"Bug Reports" = "https://github.com/pypa/sampleproject/issues"
-"Source" = "https://github.com/pypa/sampleproject/"
+"Homepage" = "https://github.com/TheBobTheBlob/Physical-Mechanics-Simulations"
+"Bug Reports" = "https://github.com/TheBobTheBlob/Physical-Mechanics-Simulations/issues"
+"Source" = "https://github.com/TheBobTheBlob/Physical-Mechanics-Simulations"

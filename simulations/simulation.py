@@ -2,9 +2,10 @@ from abc import ABC, abstractmethod
 
 
 class BaseSimulation(ABC):
-    def __init__(self, name: str):
+    def __init__(self, name: str, state_length: int):
         self.name = name
         self.offset = 0
+        self.state_length = state_length
 
         self.SIM_LENGTH = 10000  # number of steps to simulate
         self.SIMS_PER_SECOND = 25

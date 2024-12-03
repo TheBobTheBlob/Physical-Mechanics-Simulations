@@ -8,7 +8,7 @@ from .simulation import BaseSimulation  # type: ignore
 
 class Simulation(BaseSimulation):
     def __init__(self):
-        super().__init__("Launching an Object Off of a Slope")
+        super().__init__("Launching an Object Off of a Slope", 4)
 
         self.G_EARTH = 9.807  # acceleration due to gravity on Earth in m/s^2
 
@@ -17,11 +17,10 @@ class Simulation(BaseSimulation):
         self.LAUNCH_ANGLE = 45  # angle of the launch in degrees
         self.LAUNCH_SPEED = 10  # speed of the launch in m/s
 
-        self.state = np.zeros((1, 4))  # x, y, vx, vy
-        self.mass = np.array([self.PARTICLE_MASS])  # mass of each particle. unit: kg
+        self.state = np.zeros((1, self.state_length))  # x, y, vx, vy
 
     def initial_conditions(self):
-        state = np.zeros(4)  # x, y, vx, vy
+        state = np.zeros(self.state_length)
 
         state[0] = 0  # x position of the particle
         state[1] = 0  # y position of the particle
@@ -61,10 +60,12 @@ class Simulation(BaseSimulation):
             self.state[0, 1],
         )
 
+        # Plots the slope
         line_x = np.linspace(simulation[-1, 0] * -0.1, simulation[-1, 0] * 1.1, 100)
         line_y = -np.tan(np.deg2rad(self.SLOPE_ANGLE)) * line_x
-
         plt.plot(line_x, line_y)
+
+        # Plots an invisible line to set the axis limits
         plt.plot(simulation[:, 0], simulation[:, 1], visible=False)
 
         def animate_func(i):
@@ -82,7 +83,7 @@ class Simulation(BaseSimulation):
         return fig, anim
 
     def update_variables(self, variables) -> bool:
-        self.state = np.zeros((1, 4))
+        self.state = np.zeros((1, self.state_length))
         if "slope_angle" in variables:
             self.SLOPE_ANGLE = int(variables["slope_angle"])
         if "launch_angle" in variables:

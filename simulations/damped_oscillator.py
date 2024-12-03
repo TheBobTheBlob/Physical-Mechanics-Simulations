@@ -8,20 +8,19 @@ from .simulation import BaseSimulation  # type: ignore
 
 class Simulation(BaseSimulation):
     def __init__(self):
-        super().__init__("Damped Oscillator")
+        super().__init__("Damped Oscillator", 2)
 
         self.G_EARTH = 9.807  # acceleration due to gravity on Earth in m/s^2
 
         self.BOB_MASS = 10  # mass of the bob in kg
         self.DAMPING_CONSTANT = 0.2  # damping constant in Ns/m
-        self.START_ANGLE = 85  # angle of the intial sendoff in degrees
+        self.START_ANGLE = 45  # angle of the intial sendoff in degrees
         self.STRING_LENGTH = 1  # length of the string in meters
 
-        self.state = np.zeros((1, 2))  # theta, omega
-        self.mass = np.array([self.BOB_MASS])  # mass of each particle. unit: kg
+        self.state = np.zeros((1, self.state_length))  # theta, omega
 
     def initial_conditions(self):
-        state = np.zeros(2)  # theta, omega
+        state = np.zeros(self.state_length)
 
         state[0] = np.deg2rad(self.START_ANGLE)  # angle of the bob
         state[1] = 0  # angular velocity of the bob
@@ -82,7 +81,7 @@ class Simulation(BaseSimulation):
         return fig, anim
 
     def update_variables(self, variables) -> bool:
-        self.state = np.zeros((1, 2))
+        self.state = np.zeros((1, self.state_length))
         if "start_angle" in variables:
             self.START_ANGLE = int(variables["start_angle"])
         if "damping" in variables:

@@ -13,9 +13,15 @@ As my honours project for my physical mechanics class (Physics 3201) at Missouri
 
 ## Running the program
 
-1. Clone the repository
-2. Install the required packages using `pyproject.toml`
-3. Run `main.py`
+The application requires the Python programming language.
+
+First clone/download the repository, then install the required packages using `pyproject.toml` or `requirements.txt`
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+After everything is installed, run the program with `main.py`
 
 ```bash
 python main.py

@@ -1,4 +1,4 @@
-"""Simulation of throwing a particle off of a slope"""
+"""Simulation of throwing an object off of a slope"""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,10 +12,14 @@ class Simulation(BaseSimulation):
 
         self.G_EARTH = 9.807  # acceleration due to gravity on Earth in m/s^2
 
-        self.PARTICLE_MASS = 1  # mass of the particle in kg
+        self.PARTICLE_MASS = 10  # mass of the particle in kg
         self.SLOPE_ANGLE = 30  # angle of the slope in degrees
         self.LAUNCH_ANGLE = 45  # angle of the launch in degrees
         self.LAUNCH_SPEED = 10  # speed of the launch in m/s
+
+        self.AIR_RESISTANCE = False  # whether or not to include air resistance in the simulation
+        self.AIR_DENSITY = 1.225  # density of air in kg/m^3
+        self.DRAG_COEFFICIENT = 0.47  # drag coefficient of a sphere
 
         self.state = np.zeros((1, self.state_length))  # x, y, vx, vy
 
@@ -36,10 +40,23 @@ class Simulation(BaseSimulation):
         simulation = [np.copy(state)]
 
         for i in range(self.SIM_LENGTH * self.SIMS_PER_SECOND):
-            state[0] += state[2] / self.SIMS_PER_SECOND
-            state[1] += state[3] / self.SIMS_PER_SECOND
-            state[2] = state[2]
-            state[3] = initial_state[2] - (0.5 * self.G_EARTH * (i / self.SIMS_PER_SECOND) ** 2)
+            if not self.AIR_RESISTANCE:
+                state[0] += state[2] / self.SIMS_PER_SECOND
+                state[1] += state[3] / self.SIMS_PER_SECOND
+                state[2] = state[2]
+                state[3] -= self.G_EARTH / self.SIMS_PER_SECOND
+            else:
+                state[0] += state[2] / self.SIMS_PER_SECOND
+                state[1] += state[3] / self.SIMS_PER_SECOND
+                state[2] -= (
+                    (0.5 * self.AIR_DENSITY * self.DRAG_COEFFICIENT * state[2] * abs(state[2]))
+                    / self.PARTICLE_MASS
+                    / self.SIMS_PER_SECOND
+                )
+                state[3] -= (
+                    self.G_EARTH
+                    + ((0.5 * self.AIR_DENSITY * self.DRAG_COEFFICIENT * state[3] * abs(state[3])) / self.PARTICLE_MASS)
+                ) / self.SIMS_PER_SECOND
 
             if state[1] < -np.tan(np.deg2rad(self.SLOPE_ANGLE)) * state[0]:
                 break
@@ -94,6 +111,12 @@ class Simulation(BaseSimulation):
             self.G_EARTH = float(variables["gravity"])
         if "mass" in variables:
             self.PARTICLE_MASS = float(variables["mass"])
+        if "air_resistance" in variables:
+            self.AIR_RESISTANCE = variables["air_resistance"]
+        if "drag_coefficient" in variables:
+            self.DRAG_COEFFICIENT = float(variables["drag_coefficient"])
+        if "air_density" in variables:
+            self.AIR_DENSITY = float(variables["air_density"])
 
         return True
 
@@ -110,6 +133,15 @@ class Simulation(BaseSimulation):
             "speed": {"type": "float", "value": self.LAUNCH_SPEED, "label": "Launch Speed", "min": 1},
             "gravity": {"type": "float", "value": self.G_EARTH, "label": "Acceleration due to Gravity", "min": 1},
             "mass": {"type": "float", "value": self.PARTICLE_MASS, "label": "Particle Mass", "min": 1},
+            "air_resistance": {"type": "checkbox", "value": self.AIR_RESISTANCE, "label": "Air Resistance"},
+            "drag_coefficient": {
+                "type": "float",
+                "value": self.DRAG_COEFFICIENT,
+                "label": "Drag Coefficient",
+                "min": 0,
+                "max": 1,
+            },
+            "air_density": {"type": "float", "value": self.AIR_DENSITY, "label": "Air Density", "min": 0.001},
         }
 
         return fields

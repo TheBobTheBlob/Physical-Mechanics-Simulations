@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QSlider,
     QLabel,
     QLineEdit,
+    QCheckBox,
 )
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QIntValidator, QDoubleValidator
@@ -156,6 +157,27 @@ class SimulationButton(QPushButton):
                 connect(field)
                 input_layout.addWidget(labels[field])
                 input_layout.addWidget(fields[field])
+
+            elif data["type"] == "checkbox":
+                checkbox_layout = QHBoxLayout()
+
+                fields[field] = QCheckBox()
+                fields[field].setChecked(data["value"])
+
+                labels[field] = QLabel(f"{data["label"]}:")
+
+                def connect(field):
+                    def inner():
+                        self.update_simulation({field: fields[field].isChecked()})
+
+                    fields[field].stateChanged.connect(inner)
+
+                connect(field)
+                checkbox_layout.addWidget(fields[field])
+                checkbox_layout.addWidget(labels[field])
+                checkbox_layout.addStretch()
+
+                input_layout.addLayout(checkbox_layout)
 
             self.fields_layout.addLayout(input_layout)
 

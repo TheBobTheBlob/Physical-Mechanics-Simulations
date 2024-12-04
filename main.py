@@ -31,7 +31,7 @@ if __name__ == "__main__":
     if len(simulations) == 0:
         window = no_simulations.MainWindow(get_icon_file())
     else:
-        window = main_window.MainWindow(get_icon_file(), get_simulation_files())
+        window = main_window.MainWindow(get_icon_file(), simulations)
 
     window.show()
     app.exec()

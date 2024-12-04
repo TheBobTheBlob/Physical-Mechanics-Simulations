@@ -1,4 +1,13 @@
+
+# environment
 venv
+venv-package
 .vscode
+
+# python
 __pycache__
 .mypy_cache
+
+# build
+build
+dist

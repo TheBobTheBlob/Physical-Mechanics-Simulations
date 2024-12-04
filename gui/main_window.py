@@ -1,5 +1,4 @@
 from PySide6.QtWidgets import (
-    QMainWindow,
     QPushButton,
     QVBoxLayout,
     QHBoxLayout,
@@ -14,6 +13,8 @@ from PySide6.QtGui import QIntValidator, QDoubleValidator
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib
 import importlib
+from gui.base import BaseWindow
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 
@@ -211,11 +212,9 @@ class Heading(QLabel):
         )
 
 
-class MainWindow(QMainWindow):
-    def __init__(self, simulations: list):
-        super().__init__()
-        self.setWindowTitle("Physical Mechanics Simulations")
-        self.setMinimumSize(800, 600)
+class MainWindow(BaseWindow):
+    def __init__(self, icon: Path, simulations: list):
+        super().__init__(icon)
         self.showMaximized()
 
         # Layouts

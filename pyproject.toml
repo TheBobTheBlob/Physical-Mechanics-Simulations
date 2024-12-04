@@ -1,6 +1,6 @@
 [project]
 name = "mechanicssimulations"
-version = "0.0.1"
+version = "1.1.0"
 description = "A collection of mechanic simulations"
 keywords = ["physics", "simulation", "mechanics"]
 authors = [{ name = "Punit Turlapati", email = "punitsst@gmail.com" }]
@@ -10,6 +10,10 @@ license = { file = "LICENCE" }
 
 requires-python = ">=3.8"
 dependencies = ["numpy", "scipy", "matplotlib", "PySide6"]
+
+[project.optional-dependencies]
+dev = ["ruff", "pyinstaller", "mypy"]
+
 
 [project.urls]
 "Homepage" = "https://github.com/TheBobTheBlob/Physical-Mechanics-Simulations"

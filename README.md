@@ -11,6 +11,8 @@ As my honours project for my physical mechanics class (Physics 3201) at Missouri
 - Scattering of two hard-surface spheres
 - Movement of two objects of the same mass connected by two springs
 
+THe icon for the program is the "volleyball" icon from [Lucide Icons](https://lucide.dev/).
+
 ## Running the program
 
 The application requires the Python programming language.
@@ -28,3 +30,11 @@ python main.py
 ```
 
 The active simulation can be changed using the list of button on the left. The right contains editable parameters for the simulation, as well as live readings of positions and velocities of objects in the simulation.
+
+## Building the program
+
+To create an executable pyinstaller is used. `main.spec` contains its settings.
+
+```bash
+pyinstaller main.spec
+```
